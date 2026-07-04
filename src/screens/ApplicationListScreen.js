@@ -249,29 +249,6 @@ export default function ApplicationListScreen({ route, navigation }) {
         {/* Header */}
         <View style={styles.header}>
           <Text style={[styles.titleText, { color: colors.textPrimary }]}>Applications</Text>
-          {!isAnyFilterActive && allApplications.length > 1 && (
-            <TouchableOpacity 
-              style={[
-                styles.reorderToggleBtn, 
-                { 
-                  borderColor: isReorderMode ? colors.cyan : colors.border,
-                  backgroundColor: isReorderMode ? colors.cyan + '12' : 'transparent'
-                }
-              ]}
-              onPress={() => setIsReorderMode(!isReorderMode)}
-              activeOpacity={0.7}
-            >
-              <MaterialCommunityIcons 
-                name={isReorderMode ? "check-circle" : "swap-vertical"} 
-                size={16} 
-                color={isReorderMode ? colors.cyan : colors.textPrimary} 
-                style={{ marginRight: 4 }}
-              />
-              <Text style={[styles.reorderToggleText, { color: isReorderMode ? colors.cyan : colors.textPrimary }]}>
-                {isReorderMode ? "Done" : "Reorder"}
-              </Text>
-            </TouchableOpacity>
-          )}
         </View>
 
         {/* Search & Filter Button Row */}
@@ -293,6 +270,28 @@ export default function ApplicationListScreen({ route, navigation }) {
             )}
           </View>
 
+          {/* Reorder Button */}
+          {!isAnyFilterActive && allApplications.length > 1 && (
+            <TouchableOpacity 
+              style={[
+                styles.reorderIconButton, 
+                { 
+                  backgroundColor: colors.cardBg,
+                  borderColor: isReorderMode ? colors.cyan : colors.border 
+                }
+              ]}
+              onPress={() => setIsReorderMode(!isReorderMode)}
+              activeOpacity={0.7}
+            >
+              <MaterialCommunityIcons 
+                name={isReorderMode ? "check-bold" : "swap-vertical"} 
+                size={22} 
+                color={isReorderMode ? colors.cyan : colors.textPrimary} 
+              />
+            </TouchableOpacity>
+          )}
+
+          {/* Filter Button */}
           <TouchableOpacity 
             style={[
               styles.filterIconButton, 
@@ -847,16 +846,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '800',
   },
-  reorderToggleBtn: {
-    flexDirection: 'row',
+  reorderIconButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    borderWidth: 1.5,
     alignItems: 'center',
-    borderWidth: 1.2,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  reorderToggleText: {
-    fontSize: 12,
-    fontWeight: '800',
+    justifyContent: 'center',
   },
 });
