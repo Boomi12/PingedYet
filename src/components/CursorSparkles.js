@@ -66,7 +66,21 @@ export default function CursorSparkles() {
       }
     };
 
+    const handleTouch = (e) => {
+      if (e.touches && e.touches.length > 0) {
+        const touch = e.touches[0];
+        for (let i = 0; i < 2; i++) {
+          particles.push(new Particle(touch.clientX, touch.clientY));
+        }
+      }
+      if (particles.length > 80) {
+        particles.shift();
+      }
+    };
+
     window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('touchstart', handleTouch);
+    window.addEventListener('touchmove', handleTouch);
 
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -88,6 +102,8 @@ export default function CursorSparkles() {
     return () => {
       window.removeEventListener('resize', resizeCanvas);
       window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('touchstart', handleTouch);
+      window.removeEventListener('touchmove', handleTouch);
       cancelAnimationFrame(animationFrameId);
     };
   }, []);
