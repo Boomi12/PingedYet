@@ -5,12 +5,16 @@ const {
   createApplication, 
   getApplicationById, 
   updateApplication, 
-  deleteApplication 
+  deleteApplication,
+  reorderApplications
 } = require('../controllers/applicationController');
 const { protect } = require('../middleware/authMiddleware');
 
 // Wrap all application routes in the protect middleware
 router.use(protect);
+
+// Reorder route (must stand before /:id parameter matching)
+router.put('/reorder', reorderApplications);
 
 // CRUD routes
 router.route('/')

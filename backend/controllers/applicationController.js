@@ -8,8 +8,9 @@ const Application = require('../models/Application');
 const getApplications = async (req, res) => {
   try {
     // Return only applications that match the logged-in user's ID
+    // Sort by orderIndex first, then by createdAt newest first
     const applications = await Application.find({ userId: req.user.id })
-      .sort({ createdAt: -1 }); // Newest first
+      .sort({ orderIndex: 1, createdAt: -1 });
     return res.json(applications);
   } catch (error) {
     console.error('[Application Controller] Get error:', error.message);
@@ -241,10 +242,38 @@ const deleteApplication = async (req, res) => {
   }
 };
 
+/**
+ * @desc    Reorder applications
+ * @route   PUT /api/applications/reorder
+ * @access  Private
+ */
+const reorderApplications = async (req, res) => {
+  const { ids } = req.body;
+  if (!ids || !Array.isArray(ids)) {
+    return res.status(400).json({ message: 'Array of application IDs is required' });
+  }
+
+  try {
+    const bulkOps = ids.map((id, index) => ({
+      updateOne: {
+        filter: { _id: id, userId: req.user.id },
+        update: { $set: { orderIndex: index } }
+      }
+    }));
+
+    await Application.bulkWrite(bulkOps);
+    return res.json({ message: 'Applications reordered successfully' });
+  } catch (error) {
+    console.error('[Application Controller] Reorder error:', error.message);
+    return res.status(500).json({ message: 'Server error reordering applications' });
+  }
+};
+
 module.exports = {
   getApplications,
   createApplication,
   getApplicationById,
   updateApplication,
   deleteApplication,
+  reorderApplications,
 };

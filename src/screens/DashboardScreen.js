@@ -267,7 +267,7 @@ export default function DashboardScreen({ navigation }) {
                 {userInfo?.name?.split(' ')[0] || 'User'} 👋
               </Text>
             </View>
-            <Text style={[styles.welcomeSubtitleText, { color: colors.textSecondary }]} numberOfLines={1}>
+            <Text style={[styles.welcomeSubtitleText, { color: colors.textSecondary }]}>
               {applications.length === 0 
                 ? 'Start tracking your applications today.' 
                 : 'Track every application. Never miss an opportunity.'}

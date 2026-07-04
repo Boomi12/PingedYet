@@ -62,6 +62,10 @@ const applicationSchema = new mongoose.Schema({
     default: '',
     trim: true,
   },
+  orderIndex: {
+    type: Number,
+    default: 0,
+  },
 }, {
   timestamps: true, // Automates createdAt and updatedAt field management
 });
