@@ -76,18 +76,28 @@ export const AuthProvider = ({ children }) => {
     setIsLoading(true);
     try {
       const data = await authService.register(name, email, password);
-      await setSession(data.token, data.name, data.email, data.createdAt);
+      // Return verification requirements details without logging in yet
+      return { success: true, needsVerification: true, email: data.email };
+    } catch (error) {
+      setIsLoading(false);
+      return { success: false, error: error.message };
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  const completeVerification = async (data) => {
+    setIsLoading(true);
+    try {
+      await setSession(data.token, data.name, data.email, data.createdAt);
       setUserToken(data.token);
       setUserInfo({
         name: data.name,
         email: data.email,
         createdAt: data.createdAt
       });
-      return { success: true };
-    } catch (error) {
-      setIsLoading(false);
-      return { success: false, error: error.message };
+    } catch (e) {
+      console.error('[AuthContext] Error setting verified session:', e);
     } finally {
       setIsLoading(false);
     }
@@ -119,6 +129,7 @@ export const AuthProvider = ({ children }) => {
         userInfo,
         signIn,
         signUp,
+        completeVerification,
         signOut,
       }}
     >

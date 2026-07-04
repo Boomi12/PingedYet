@@ -72,7 +72,10 @@ export default function RegisterScreen({ navigation }) {
     setIsSubmitting(true);
     const result = await signUp(name.trim(), email.trim(), password.trim());
     
-    if (!result.success) {
+    if (result.success) {
+      setIsSubmitting(false);
+      navigation.navigate('OtpVerification', { email: email.trim() });
+    } else {
       setGeneralError(result.error || 'Failed to create an account.');
       setIsSubmitting(false);
     }
