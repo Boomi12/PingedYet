@@ -12,7 +12,19 @@ import { cancelReminder } from '../services/notificationService';
 export default function ApplicationCard({ application, onPress, onStatusUpdate, onDeleteRefresh }) {
   const navigation = useNavigation();
   const { colors, isDark } = useContext(ThemeContext);
-  const { id, companyName, role, status, appliedDate, interviewDate, platform, notificationId } = application;
+  const { 
+    id, 
+    companyName, 
+    role, 
+    status, 
+    appliedDate, 
+    interviewDate, 
+    platform, 
+    notificationId,
+    workMode,
+    workLocation,
+    stipendAmount
+  } = application;
 
   const getStatusColor = (currentStatus) => {
     switch (currentStatus) {
@@ -169,6 +181,32 @@ export default function ApplicationCard({ application, onPress, onStatusUpdate, 
         </View>
       </View>
 
+      {/* Badges for Work Mode, Location, and Stipend */}
+      {(workMode || workLocation || (stipendAmount !== undefined && stipendAmount !== null && stipendAmount !== '')) ? (
+        <View style={styles.badgesContainer}>
+          {workMode ? (
+            <View style={[styles.metaBadge, { backgroundColor: colors.purple + '12', borderColor: colors.purple + '30' }]}>
+              <MaterialCommunityIcons name="briefcase-clock" size={11} color={colors.purple} />
+              <Text style={[styles.metaBadgeText, { color: colors.purple }]}>{workMode}</Text>
+            </View>
+          ) : null}
+          {workLocation ? (
+            <View style={[styles.metaBadge, { backgroundColor: colors.cyan + '12', borderColor: colors.cyan + '30' }]}>
+              <MaterialCommunityIcons name="map-marker-outline" size={11} color={colors.cyan} />
+              <Text style={[styles.metaBadgeText, { color: colors.cyan }]} numberOfLines={1}>{workLocation}</Text>
+            </View>
+          ) : null}
+          {(stipendAmount !== undefined && stipendAmount !== null && stipendAmount !== '') ? (
+            <View style={[styles.metaBadge, { backgroundColor: colors.success + '12', borderColor: colors.success + '30' }]}>
+              <MaterialCommunityIcons name="cash-multiple" size={11} color={colors.success} />
+              <Text style={[styles.metaBadgeText, { color: colors.success }]}>
+                {Number(stipendAmount).toLocaleString()}
+              </Text>
+            </View>
+          ) : null}
+        </View>
+      ) : null}
+
       {/* Dates & Elapsed Counter */}
       <View style={[styles.datesContainer, { borderColor: colors.border }]}>
         <View style={styles.dateRow}>
@@ -291,6 +329,27 @@ const styles = StyleSheet.create({
     padding: 6,
     borderRadius: 8,
     borderWidth: 1,
+  },
+  // Badges container styles
+  badgesContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginBottom: 10,
+  },
+  metaBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    gap: 3,
+  },
+  metaBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    textTransform: 'uppercase',
   },
   datesContainer: {
     borderRadius: 10,

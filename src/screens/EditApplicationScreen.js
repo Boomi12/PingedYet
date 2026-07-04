@@ -23,26 +23,37 @@ import CursorSparkles from '../components/CursorSparkles';
 import DatePickerInput from '../components/DatePickerInput';
 import BackgroundBubbles from '../components/BackgroundBubbles';
 
+const SUGGESTED_ROLES = [
+  "Frontend Developer",
+  "Backend Developer",
+  "Full Stack Developer",
+  "Software Developer",
+  "Web Developer",
+  "React Developer",
+  "React Native Developer",
+  "Node.js Developer",
+  "Python Developer",
+  "Java Developer",
+  "UI/UX Designer",
+  "Product Designer",
+  "QA Tester",
+  "Data Analyst",
+  "Data Scientist",
+  "Machine Learning Intern",
+  "AI Intern",
+  "DevOps Intern",
+  "Cloud Intern",
+  "Cybersecurity Intern",
+  "WordPress Developer",
+  "PHP Developer",
+  "Mobile App Developer"
+];
+
+const DURATION_SUGGESTIONS = ['3 months', '6 months', 'Full-time', 'Part-time'];
+
 export default function EditApplicationScreen({ route, navigation }) {
   const { id } = route.params;
   const { colors, isDark } = useContext(ThemeContext);
-
-  const formatDateToString = (date) => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
-
-  const parseStringToDate = (dateString) => {
-    if (!dateString) return new Date();
-    try {
-      const d = new Date(dateString);
-      return isNaN(d.getTime()) ? new Date() : d;
-    } catch {
-      return new Date();
-    }
-  };
 
   const getStatusColor = (currentStatus) => {
     switch (currentStatus) {
@@ -67,40 +78,63 @@ export default function EditApplicationScreen({ route, navigation }) {
   const [notes, setNotes] = useState('');
   const [prevNotificationId, setPrevNotificationId] = useState(null);
 
-  // Native Picker Date Objects
-  const [appliedDateObj, setAppliedDateObj] = useState(new Date());
-  const [interviewDateObj, setInterviewDateObj] = useState(new Date());
+  // New Fields State
+  const [workMode, setWorkMode] = useState('');
+  const [stipendAmount, setStipendAmount] = useState('');
+  const [workLocation, setWorkLocation] = useState('');
+  const [duration, setDuration] = useState('');
 
-  // UI picker states
-  const [showAppliedPicker, setShowAppliedPicker] = useState(false);
-  const [showInterviewPicker, setShowInterviewPicker] = useState(false);
-  
+  // Autocomplete suggestions state
+  const [mostUsedRoles, setMostUsedRoles] = useState([]);
+  const [roleSuggestions, setRoleSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
   // Validation States
   const [companyError, setCompanyError] = useState('');
   const [roleError, setRoleError] = useState('');
   const [appliedDateError, setAppliedDateError] = useState('');
   const [interviewDateError, setInterviewDateError] = useState('');
+  const [stipendError, setStipendError] = useState('');
   const [generalError, setGeneralError] = useState('');
 
   // UI States
   const [isPickerVisible, setIsPickerVisible] = useState(false);
   const [focusedInput, setFocusedInput] = useState(null);
 
+  // Fetch applications list to compute most used roles, then load specific application
   useEffect(() => {
-    const loadApplication = async () => {
+    const loadData = async () => {
       try {
+        // 1. Load roles list
+        const list = await applicationService.getAll();
+        if (list) {
+          const counts = {};
+          list.forEach(app => {
+            if (app.role) {
+              const r = app.role.trim();
+              counts[r] = (counts[r] || 0) + 1;
+            }
+          });
+          const sorted = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
+          setMostUsedRoles(sorted);
+        }
+
+        // 2. Load single application
         const app = await applicationService.getById(id);
         if (app) {
           setCompanyName(app.companyName);
           setRole(app.role);
           setPlatform(app.platform || app.platformAppliedFrom || '');
           setAppliedDate(app.appliedDate);
-          setAppliedDateObj(parseStringToDate(app.appliedDate));
           setInterviewDate(app.interviewDate || '');
-          setInterviewDateObj(parseStringToDate(app.interviewDate));
           setStatus(app.status);
           setNotes(app.notes || '');
           setPrevNotificationId(app.notificationId || null);
+          
+          setWorkMode(app.workMode || '');
+          setStipendAmount(app.stipendAmount !== null && app.stipendAmount !== undefined ? String(app.stipendAmount) : '');
+          setWorkLocation(app.workLocation || '');
+          setDuration(app.duration || '');
         } else {
           Alert.alert('System Error', 'Application not found.');
           navigation.goBack();
@@ -113,14 +147,61 @@ export default function EditApplicationScreen({ route, navigation }) {
       }
     };
 
-    loadApplication();
+    loadData();
   }, [id]);
+
+  const handleRoleChange = (text) => {
+    setRole(text);
+    if (roleError) setRoleError('');
+
+    if (text.trim() === '') {
+      setRoleSuggestions(mostUsedRoles.slice(0, 5));
+    } else {
+      const trimmed = text.toLowerCase().trim();
+
+      const keywordMap = {
+        'front': ['Frontend Developer'],
+        'react': ['React Developer', 'React Native Developer'],
+        'node': ['Node.js Developer', 'Backend Developer'],
+        'ui': ['UI/UX Designer'],
+        'data': ['Data Analyst', 'Data Scientist'],
+        'ai': ['AI Intern', 'Machine Learning Intern']
+      };
+
+      let matched = [];
+      Object.keys(keywordMap).forEach(key => {
+        if (trimmed.includes(key)) {
+          matched = [...matched, ...keywordMap[key]];
+        }
+      });
+
+      const combinedList = Array.from(new Set([...mostUsedRoles, ...SUGGESTED_ROLES]));
+
+      combinedList.forEach(r => {
+        if (r.toLowerCase().includes(trimmed) && !matched.includes(r)) {
+          matched.push(r);
+        }
+      });
+
+      matched.sort((a, b) => {
+        const idxA = mostUsedRoles.indexOf(a);
+        const idxB = mostUsedRoles.indexOf(b);
+        if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+        if (idxA !== -1) return -1;
+        if (idxB !== -1) return 1;
+        return 0;
+      });
+
+      setRoleSuggestions(matched);
+    }
+  };
 
   const handleUpdate = async () => {
     setCompanyError('');
     setRoleError('');
     setAppliedDateError('');
     setInterviewDateError('');
+    setStipendError('');
     setGeneralError('');
 
     let hasError = false;
@@ -149,6 +230,13 @@ export default function EditApplicationScreen({ route, navigation }) {
         hasError = true;
       } else if (new Date(interviewDate) < new Date(appliedDate)) {
         setInterviewDateError('Interview date cannot be before applied date.');
+        hasError = true;
+      }
+    }
+
+    if (stipendAmount.trim()) {
+      if (isNaN(Number(stipendAmount))) {
+        setStipendError('Stipend / Salary / Fee must be a valid number.');
         hasError = true;
       }
     }
@@ -182,6 +270,10 @@ export default function EditApplicationScreen({ route, navigation }) {
         status,
         notes: notes.trim(),
         notificationId: newNotificationId,
+        workMode: workMode || null,
+        stipendAmount: stipendAmount.trim() !== '' ? Number(stipendAmount) : null,
+        workLocation: workLocation.trim(),
+        duration: duration.trim(),
       });
 
       Alert.alert('Success', 'Application saved successfully.');
@@ -205,8 +297,6 @@ export default function EditApplicationScreen({ route, navigation }) {
       hasValidationError && { borderColor: colors.error }
     ];
   };
-
-
 
   if (isLoading) {
     return (
@@ -253,14 +343,10 @@ export default function EditApplicationScreen({ route, navigation }) {
             </View>
           ) : null}
 
-          <View style={[
-            styles.formCard, 
-            { 
-              backgroundColor: colors.cardBg, 
-              borderColor: colors.border, 
-              shadowColor: colors.shadow 
-            }
-          ]}>
+          {/* Group 1: Basic Details */}
+          <View style={[styles.formCard, { backgroundColor: colors.cardBg, borderColor: colors.border, shadowColor: colors.shadow }]}>
+            <Text style={[styles.sectionTitle, { color: colors.cyan }]}>Basic Details</Text>
+
             {/* Company Name */}
             <Text style={[styles.label, { color: colors.textSecondary }]}>Company Name *</Text>
             <View style={styles.inputContainer}>
@@ -273,7 +359,10 @@ export default function EditApplicationScreen({ route, navigation }) {
                   setCompanyName(text);
                   if (companyError) setCompanyError('');
                 }}
-                onFocus={() => setFocusedInput('company')}
+                onFocus={() => {
+                  setFocusedInput('company');
+                  setShowSuggestions(false);
+                }}
                 onBlur={() => setFocusedInput(null)}
                 keyboardAppearance="dark"
                 editable={!isSubmitting}
@@ -281,7 +370,7 @@ export default function EditApplicationScreen({ route, navigation }) {
               {companyError ? <Text style={[styles.errorLabelText, { color: colors.error }]}>{companyError}</Text> : null}
             </View>
 
-            {/* Role */}
+            {/* Role autocomplete */}
             <Text style={[styles.label, { color: colors.textSecondary }]}>Role / Position *</Text>
             <View style={styles.inputContainer}>
               <TextInput
@@ -289,17 +378,49 @@ export default function EditApplicationScreen({ route, navigation }) {
                 placeholder="e.g. Software Engineer"
                 placeholderTextColor={colors.textMuted}
                 value={role}
-                onChangeText={(text) => {
-                  setRole(text);
-                  if (roleError) setRoleError('');
+                onChangeText={handleRoleChange}
+                onFocus={() => {
+                  setFocusedInput('role');
+                  setShowSuggestions(true);
+                  if (role.trim() === '') {
+                    setRoleSuggestions(mostUsedRoles.slice(0, 5));
+                  } else {
+                    handleRoleChange(role);
+                  }
                 }}
-                onFocus={() => setFocusedInput('role')}
                 onBlur={() => setFocusedInput(null)}
                 keyboardAppearance="dark"
                 editable={!isSubmitting}
               />
               {roleError ? <Text style={[styles.errorLabelText, { color: colors.error }]}>{roleError}</Text> : null}
             </View>
+
+            {/* Suggestions dropdown list */}
+            {showSuggestions && roleSuggestions.length > 0 && (
+              <View style={[styles.suggestionsContainer, { backgroundColor: colors.cardBg, borderColor: colors.cyan + '40' }]}>
+                <ScrollView nestedScrollEnabled style={styles.suggestionsScroll} keyboardShouldPersistTaps="always">
+                  {roleSuggestions.map((item, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      style={[styles.suggestionItem, { borderBottomColor: colors.border }]}
+                      onPress={() => {
+                        setRole(item);
+                        setRoleError('');
+                        setShowSuggestions(false);
+                      }}
+                    >
+                      <MaterialCommunityIcons name="briefcase-outline" size={14} color={colors.cyan} style={{ marginRight: 8 }} />
+                      <Text style={[styles.suggestionText, { color: colors.textPrimary }]}>{item}</Text>
+                      {mostUsedRoles.includes(item) && (
+                        <View style={styles.historyBadge}>
+                          <MaterialCommunityIcons name="history" size={10} color={colors.purple} />
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
 
             {/* Platform */}
             <Text style={[styles.label, { color: colors.textSecondary }]}>Platform Applied From</Text>
@@ -310,14 +431,124 @@ export default function EditApplicationScreen({ route, navigation }) {
                 placeholderTextColor={colors.textMuted}
                 value={platform}
                 onChangeText={setPlatform}
-                onFocus={() => setFocusedInput('platform')}
+                onFocus={() => {
+                  setFocusedInput('platform');
+                  setShowSuggestions(false);
+                }}
+                onBlur={() => setFocusedInput(null)}
+                keyboardAppearance="dark"
+                editable={!isSubmitting}
+              />
+            </View>
+          </View>
+
+          {/* Group 2: Work Details */}
+          <View style={[styles.formCard, { backgroundColor: colors.cardBg, borderColor: colors.border, shadowColor: colors.shadow, marginTop: 20 }]}>
+            <Text style={[styles.sectionTitle, { color: colors.cyan }]}>Work Details</Text>
+
+            {/* Work Mode Selector */}
+            <Text style={[styles.label, { color: colors.textSecondary }]}>Work Mode</Text>
+            <View style={styles.workModeRow}>
+              {['Work From Home', 'In-Office', 'Hybrid'].map((mode) => {
+                const isSelected = workMode === mode;
+                return (
+                  <TouchableOpacity
+                    key={mode}
+                    style={[
+                      styles.workModeBtn,
+                      { borderColor: colors.border, backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#FFFFFF' },
+                      isSelected && { borderColor: colors.cyan, backgroundColor: colors.cyan + '18' }
+                    ]}
+                    onPress={() => setWorkMode(isSelected ? '' : mode)}
+                  >
+                    <Text style={[styles.workModeBtnText, { color: isSelected ? colors.cyan : colors.textSecondary }]}>
+                      {mode}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            {/* Work Location */}
+            <Text style={[styles.label, { color: colors.textSecondary }]}>Work Location</Text>
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={getStyleForInput('workLocation', false)}
+                placeholder="e.g. Bengaluru, Remote, Mumbai"
+                placeholderTextColor={colors.textMuted}
+                value={workLocation}
+                onChangeText={setWorkLocation}
+                onFocus={() => {
+                  setFocusedInput('workLocation');
+                  setShowSuggestions(false);
+                }}
                 onBlur={() => setFocusedInput(null)}
                 keyboardAppearance="dark"
                 editable={!isSubmitting}
               />
             </View>
 
-            {/* Dates */}
+            {/* Stipend Amount */}
+            <Text style={[styles.label, { color: colors.textSecondary }]}>Stipend / Salary / Fee</Text>
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={getStyleForInput('stipend', !!stipendError)}
+                placeholder="Enter amount (e.g. 10000)"
+                placeholderTextColor={colors.textMuted}
+                value={stipendAmount}
+                onChangeText={(text) => {
+                  setStipendAmount(text);
+                  if (stipendError) setStipendError('');
+                }}
+                onFocus={() => {
+                  setFocusedInput('stipend');
+                  setShowSuggestions(false);
+                }}
+                onBlur={() => setFocusedInput(null)}
+                keyboardType="numeric"
+                keyboardAppearance="dark"
+                editable={!isSubmitting}
+              />
+              {stipendError ? <Text style={[styles.errorLabelText, { color: colors.error }]}>{stipendError}</Text> : null}
+            </View>
+
+            {/* Duration */}
+            <Text style={[styles.label, { color: colors.textSecondary }]}>Duration</Text>
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={getStyleForInput('duration', false)}
+                placeholder="e.g. 3 months, 6 months, Full-time"
+                placeholderTextColor={colors.textMuted}
+                value={duration}
+                onChangeText={setDuration}
+                onFocus={() => {
+                  setFocusedInput('duration');
+                  setShowSuggestions(false);
+                }}
+                onBlur={() => setFocusedInput(null)}
+                keyboardAppearance="dark"
+                editable={!isSubmitting}
+              />
+              
+              {/* Duration suggestions chips */}
+              <View style={styles.durationSuggestions}>
+                {DURATION_SUGGESTIONS.map((sug) => (
+                  <TouchableOpacity
+                    key={sug}
+                    style={[styles.durationChip, { borderColor: colors.border, backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : '#FFFFFF' }]}
+                    onPress={() => setDuration(sug)}
+                  >
+                    <Text style={[styles.durationChipText, { color: colors.textSecondary }]}>{sug}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          </View>
+
+          {/* Group 3: Dates */}
+          <View style={[styles.formCard, { backgroundColor: colors.cardBg, borderColor: colors.border, shadowColor: colors.shadow, marginTop: 20 }]}>
+            <Text style={[styles.sectionTitle, { color: colors.cyan }]}>Dates</Text>
+
             <View style={styles.row}>
               {/* Applied Date */}
               <View style={styles.halfWidth}>
@@ -370,16 +601,22 @@ export default function EditApplicationScreen({ route, navigation }) {
               </View>
               <MaterialCommunityIcons name="chevron-down" size={20} color={getStatusColor(status)} />
             </TouchableOpacity>
+          </View>
 
-            {/* Notes */}
-            <Text style={[styles.label, { color: colors.textSecondary }]}>Notes & Details</Text>
+          {/* Group 4: Notes & Details */}
+          <View style={[styles.formCard, { backgroundColor: colors.cardBg, borderColor: colors.border, shadowColor: colors.shadow, marginTop: 20 }]}>
+            <Text style={[styles.sectionTitle, { color: colors.cyan }]}>Notes & Details</Text>
+
             <TextInput
               style={[getStyleForInput('notes', false), styles.textArea]}
               placeholder="Add update notes, interviewer feedback, or next steps..."
               placeholderTextColor={colors.textMuted}
               value={notes}
               onChangeText={setNotes}
-              onFocus={() => setFocusedInput('notes')}
+              onFocus={() => {
+                setFocusedInput('notes');
+                setShowSuggestions(false);
+              }}
               onBlur={() => setFocusedInput(null)}
               multiline
               numberOfLines={4}
@@ -538,6 +775,13 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 5,
   },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    marginBottom: 16,
+  },
   label: {
     fontSize: 11,
     fontWeight: '700',
@@ -571,20 +815,6 @@ const styles = StyleSheet.create({
   halfWidth: {
     width: '48%',
   },
-  dateTrigger: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 1.5,
-    borderRadius: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    height: 48,
-  },
-  dateTriggerText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
   pickerTrigger: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -594,7 +824,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 14,
     height: 48,
-    marginBottom: 20,
   },
   pickerTriggerContent: {
     flexDirection: 'row',
@@ -635,6 +864,72 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '800',
     letterSpacing: 0.5,
+  },
+  // Work Mode Selection
+  workModeRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+    gap: 8,
+  },
+  workModeBtn: {
+    flex: 1,
+    height: 40,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  workModeBtnText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  // Autocomplete Suggestions
+  suggestionsContainer: {
+    borderWidth: 1.5,
+    borderRadius: 12,
+    marginTop: -8,
+    marginBottom: 16,
+    maxHeight: 180,
+    overflow: 'hidden',
+    zIndex: 10,
+  },
+  suggestionsScroll: {
+    padding: 6,
+  },
+  suggestionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+  },
+  suggestionText: {
+    fontSize: 13,
+    fontWeight: '600',
+    flex: 1,
+  },
+  historyBadge: {
+    padding: 3,
+    borderRadius: 4,
+    backgroundColor: 'rgba(168, 85, 247, 0.15)',
+  },
+  // Duration Chip Suggestions
+  durationSuggestions: {
+    flexDirection: 'row',
+    marginTop: 8,
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  durationChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  durationChipText: {
+    fontSize: 11,
+    fontWeight: '600',
   },
   // Modal Picker
   modalOverlay: {
@@ -681,36 +976,5 @@ const styles = StyleSheet.create({
   optionText: {
     fontSize: 14,
     fontWeight: '700',
-  },
-  // iOS DatePicker Modal Styles
-  pickerModalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  pickerModalContainer: {
-    borderRadius: 20,
-    borderWidth: 1.5,
-    padding: 20,
-    width: '100%',
-    maxWidth: 340,
-    alignItems: 'center',
-  },
-  pickerModalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-    marginTop: 20,
-    gap: 12,
-  },
-  pickerModalBtn: {
-    flex: 1,
-    height: 44,
-    borderRadius: 10,
-    borderWidth: 1.5,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 });

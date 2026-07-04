@@ -376,6 +376,28 @@ export default function ApplicationDetailsScreen({ route, navigation }) {
           ]}>
             <Text style={[styles.detailsCardTitle, { color: colors.textPrimary }]}>Application Summary</Text>
 
+            {/* Company Name */}
+            <View style={[styles.detailRow, { borderBottomColor: colors.border }]}>
+              <View style={styles.detailRowLeft}>
+                <MaterialCommunityIcons name="office-building" size={18} color={colors.cyan} />
+                <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Company</Text>
+              </View>
+              <Text style={[styles.detailValue, { color: colors.textPrimary }]}>
+                {application.companyName}
+              </Text>
+            </View>
+
+            {/* Role / Position */}
+            <View style={[styles.detailRow, { borderBottomColor: colors.border }]}>
+              <View style={styles.detailRowLeft}>
+                <MaterialCommunityIcons name="briefcase-outline" size={18} color={colors.cyan} />
+                <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Role</Text>
+              </View>
+              <Text style={[styles.detailValue, { color: colors.textPrimary }]}>
+                {application.role}
+              </Text>
+            </View>
+
             {/* Platform */}
             <View style={[styles.detailRow, { borderBottomColor: colors.border }]}>
               <View style={styles.detailRowLeft}>
@@ -384,6 +406,63 @@ export default function ApplicationDetailsScreen({ route, navigation }) {
               </View>
               <Text style={[styles.detailValue, { color: colors.textPrimary }]}>
                 {application.platform || 'Direct / Other'}
+              </Text>
+            </View>
+
+            {/* Status */}
+            <View style={[styles.detailRow, { borderBottomColor: colors.border }]}>
+              <View style={styles.detailRowLeft}>
+                <MaterialCommunityIcons name="tag-outline" size={18} color={colors.cyan} />
+                <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Status</Text>
+              </View>
+              <Text style={[styles.detailValue, { color: currentStatusColor, fontWeight: '800' }]}>
+                {application.status}
+              </Text>
+            </View>
+
+            {/* Work Mode */}
+            <View style={[styles.detailRow, { borderBottomColor: colors.border }]}>
+              <View style={styles.detailRowLeft}>
+                <MaterialCommunityIcons name="briefcase-clock" size={18} color={colors.purple} />
+                <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Work Mode</Text>
+              </View>
+              <Text style={[styles.detailValue, { color: colors.textPrimary }]}>
+                {application.workMode || 'Not specified'}
+              </Text>
+            </View>
+
+            {/* Work Location */}
+            <View style={[styles.detailRow, { borderBottomColor: colors.border }]}>
+              <View style={styles.detailRowLeft}>
+                <MaterialCommunityIcons name="map-marker-outline" size={18} color={colors.cyan} />
+                <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Work Location</Text>
+              </View>
+              <Text style={[styles.detailValue, { color: colors.textPrimary }]}>
+                {application.workLocation || 'Not specified'}
+              </Text>
+            </View>
+
+            {/* Stipend / Salary / Fee */}
+            <View style={[styles.detailRow, { borderBottomColor: colors.border }]}>
+              <View style={styles.detailRowLeft}>
+                <MaterialCommunityIcons name="cash-multiple" size={18} color={colors.success} />
+                <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Stipend / Salary / Fee</Text>
+              </View>
+              <Text style={[styles.detailValue, { color: colors.textPrimary }]}>
+                {application.stipendAmount !== null && application.stipendAmount !== undefined
+                  ? Number(application.stipendAmount).toLocaleString()
+                  : 'Not specified'}
+              </Text>
+            </View>
+
+            {/* Duration */}
+            <View style={[styles.detailRow, { borderBottomColor: colors.border }]}>
+              <View style={styles.detailRowLeft}>
+                <MaterialCommunityIcons name="clock-outline" size={18} color={colors.cyan} />
+                <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Duration</Text>
+              </View>
+              <Text style={[styles.detailValue, { color: colors.textPrimary }]}>
+                {application.duration || 'Not specified'}
               </Text>
             </View>
 

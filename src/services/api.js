@@ -3,10 +3,13 @@ import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // CENTRAL BASE URL CONFIGURATION
-const BASE_URL = 'https://pingedyet.onrender.com';
+const DEV_URL = Platform.select({
+  ios: 'http://localhost:5000',
+  android: 'http://10.0.2.2:5000',
+  default: 'http://localhost:5000',
+});
 
-// NOTE: IF RUNNING ON A PHYSICAL DEVICE:
-// BASE_URL = 'http://192.168.1.100:5000';
+const BASE_URL = __DEV__ ? DEV_URL : 'https://pingedyet.onrender.com';
 
 const api = axios.create({
   baseURL: BASE_URL,

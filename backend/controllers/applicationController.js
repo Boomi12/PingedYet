@@ -32,7 +32,11 @@ const createApplication = async (req, res) => {
     interviewDate, 
     status, 
     notes,
-    notificationId
+    notificationId,
+    workMode,
+    stipendAmount,
+    workLocation,
+    duration
   } = req.body;
 
   try {
@@ -53,6 +57,18 @@ const createApplication = async (req, res) => {
       return res.status(400).json({ message: 'Interview date cannot be before applied date' });
     }
 
+    // Stipend validation
+    if (stipendAmount !== undefined && stipendAmount !== null && stipendAmount !== '') {
+      if (isNaN(Number(stipendAmount))) {
+        return res.status(400).json({ message: 'Stipend amount must be a valid number' });
+      }
+    }
+
+    // Work mode validation
+    if (workMode && !['Work From Home', 'In-Office', 'Hybrid'].includes(workMode)) {
+      return res.status(400).json({ message: 'Invalid work mode option' });
+    }
+
     // Map platforms gracefully to accept both frontend field variations
     const finalPlatform = platform || platformAppliedFrom || 'Direct/Other';
 
@@ -66,6 +82,10 @@ const createApplication = async (req, res) => {
       status: status || 'Applied',
       notes: notes || '',
       notificationId: notificationId || null,
+      workMode: workMode || null,
+      stipendAmount: (stipendAmount !== undefined && stipendAmount !== null && stipendAmount !== '') ? Number(stipendAmount) : null,
+      workLocation: workLocation || '',
+      duration: duration || '',
     });
 
     return res.status(201).json(application);
@@ -113,7 +133,11 @@ const updateApplication = async (req, res) => {
     interviewDate, 
     status, 
     notes,
-    notificationId
+    notificationId,
+    workMode,
+    stipendAmount,
+    workLocation,
+    duration
   } = req.body;
 
   try {
@@ -149,6 +173,18 @@ const updateApplication = async (req, res) => {
       return res.status(400).json({ message: 'Interview date cannot be before applied date' });
     }
 
+    // Stipend validation
+    if (stipendAmount !== undefined && stipendAmount !== null && stipendAmount !== '') {
+      if (isNaN(Number(stipendAmount))) {
+        return res.status(400).json({ message: 'Stipend amount must be a valid number' });
+      }
+    }
+
+    // Work mode validation
+    if (workMode && !['Work From Home', 'In-Office', 'Hybrid'].includes(workMode)) {
+      return res.status(400).json({ message: 'Invalid work mode option' });
+    }
+
     // Update fields conditionally if provided in request body
     if (companyName !== undefined) application.companyName = companyName;
     if (role !== undefined) application.role = role;
@@ -160,6 +196,13 @@ const updateApplication = async (req, res) => {
     if (status !== undefined) application.status = status;
     if (notes !== undefined) application.notes = notes;
     if (notificationId !== undefined) application.notificationId = notificationId;
+    
+    if (workMode !== undefined) application.workMode = workMode || null;
+    if (stipendAmount !== undefined) {
+      application.stipendAmount = (stipendAmount !== null && stipendAmount !== '') ? Number(stipendAmount) : null;
+    }
+    if (workLocation !== undefined) application.workLocation = workLocation || '';
+    if (duration !== undefined) application.duration = duration || '';
 
     const updatedApplication = await application.save();
     return res.json(updatedApplication);

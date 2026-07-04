@@ -43,8 +43,28 @@ const applicationSchema = new mongoose.Schema({
     type: String,
     default: null,
   },
+  workMode: {
+    type: String,
+    enum: ['Work From Home', 'In-Office', 'Hybrid'],
+    default: null,
+  },
+  stipendAmount: {
+    type: Number,
+    default: null,
+  },
+  workLocation: {
+    type: String,
+    default: '',
+    trim: true,
+  },
+  duration: {
+    type: String,
+    default: '',
+    trim: true,
+  },
 }, {
   timestamps: true, // Automates createdAt and updatedAt field management
 });
 
 module.exports = mongoose.model('Application', applicationSchema);
+

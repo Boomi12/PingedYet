@@ -406,7 +406,9 @@ export default function DashboardScreen({ navigation }) {
                     <View style={[styles.upcomingDot, { backgroundColor: colors.cyan }]} />
                     <View style={{ flex: 1 }}>
                       <Text style={[styles.upcomingCompany, { color: colors.textPrimary }]} numberOfLines={1}>{app.companyName}</Text>
-                      <Text style={[styles.upcomingRole, { color: colors.textSecondary }]} numberOfLines={1}>{app.role}</Text>
+                      <Text style={[styles.upcomingRole, { color: colors.textSecondary }]} numberOfLines={1}>
+                        {app.role}{app.workMode ? ` • ${app.workMode}` : ''}{app.workLocation ? ` (${app.workLocation})` : ''}
+                      </Text>
                     </View>
                   </View>
                   <View style={styles.upcomingRight}>
