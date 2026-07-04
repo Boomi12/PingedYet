@@ -25,13 +25,13 @@ export default function CursorSparkles() {
       constructor(x, y) {
         this.x = x;
         this.y = y;
-        this.size = Math.random() * 2.5 + 1;
-        this.speedX = Math.random() * 1.2 - 0.6;
-        this.speedY = Math.random() * 1.2 - 0.6;
+        this.size = Math.random() * 4.5 + 2; // Larger particles (2px to 6.5px)
+        this.speedX = Math.random() * 2 - 1.0; // Higher speed/drift range
+        this.speedY = Math.random() * 2 - 1.0;
         // Cyberpunk palette: neon cyan or purple
         this.color = Math.random() > 0.5 ? '#00F0FF' : '#A855F7';
         this.alpha = 1;
-        this.decay = Math.random() * 0.02 + 0.015;
+        this.decay = Math.random() * 0.01 + 0.008; // Slower decay (lasts longer)
       }
 
       update() {
@@ -43,7 +43,7 @@ export default function CursorSparkles() {
       draw(context) {
         context.save();
         context.globalAlpha = this.alpha;
-        context.shadowBlur = 4;
+        context.shadowBlur = 6; // Enhanced glow shadow blur
         context.shadowColor = this.color;
         context.fillStyle = this.color;
         context.beginPath();
@@ -61,7 +61,7 @@ export default function CursorSparkles() {
         particles.push(new Particle(e.clientX, e.clientY));
       }
       
-      if (particles.length > 80) {
+      if (particles.length > 100) {
         particles.shift();
       }
     };
@@ -69,18 +69,19 @@ export default function CursorSparkles() {
     const handleTouch = (e) => {
       if (e.touches && e.touches.length > 0) {
         const touch = e.touches[0];
-        for (let i = 0; i < 2; i++) {
+        // Spawn 4 particles per touch for higher brightness on mobile
+        for (let i = 0; i < 4; i++) {
           particles.push(new Particle(touch.clientX, touch.clientY));
         }
       }
-      if (particles.length > 80) {
+      if (particles.length > 100) {
         particles.shift();
       }
     };
 
     window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('touchstart', handleTouch);
-    window.addEventListener('touchmove', handleTouch);
+    window.addEventListener('touchstart', handleTouch, { passive: true });
+    window.addEventListener('touchmove', handleTouch, { passive: true });
 
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);

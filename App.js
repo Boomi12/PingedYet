@@ -14,43 +14,43 @@ export default function App() {
     if (Platform.OS === 'web') return;
 
     const newParticles = [];
-    // Spawn 3 particles per touch event
-    for (let i = 0; i < 3; i++) {
+    // Spawn 6 particles per touch event for higher density
+    for (let i = 0; i < 6; i++) {
       particleId.current += 1;
       newParticles.push({
         id: particleId.current,
         x,
         y,
-        size: Math.random() * 6 + 4, // 4px to 10px random sizes
-        color: Math.random() > 0.5 ? '#00F0FF' : '#A855F7', // neon cyan or purple
+        size: Math.random() * 10 + 6, // Larger particles (6px to 16px)
+        color: Math.random() > 0.5 ? '#00F0FF' : '#A855F7',
         animX: new Animated.Value(0),
         animY: new Animated.Value(0),
         opacity: new Animated.Value(1),
       });
     }
 
-    setParticles(prev => [...prev, ...newParticles].slice(-30)); // Limit to 30 active particles for performance
+    setParticles(prev => [...prev, ...newParticles].slice(-50)); // Limit to 50 active particles
 
     newParticles.forEach(p => {
       const angle = Math.random() * Math.PI * 2;
-      const distance = Math.random() * 25 + 10;
+      const distance = Math.random() * 40 + 20; // Drift further out
       const targetX = Math.cos(angle) * distance;
       const targetY = Math.sin(angle) * distance;
 
       Animated.parallel([
         Animated.timing(p.animX, {
           toValue: targetX,
-          duration: 350,
+          duration: 550, // Float longer (550ms)
           useNativeDriver: true,
         }),
         Animated.timing(p.animY, {
           toValue: targetY,
-          duration: 350,
+          duration: 550,
           useNativeDriver: true,
         }),
         Animated.timing(p.opacity, {
           toValue: 0,
-          duration: 350,
+          duration: 550,
           useNativeDriver: true,
         }),
       ]).start(() => {
