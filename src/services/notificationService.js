@@ -40,7 +40,7 @@ export const setNotificationPreference = async (enabled) => {
  * Request system notifications permissions from iOS or Android OS.
  */
 export const requestNotificationPermission = async () => {
-  if (Platform.OS === 'web') return false;
+  if (Platform.OS === 'web') return true;
   try {
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;
