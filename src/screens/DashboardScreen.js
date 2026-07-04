@@ -235,23 +235,6 @@ export default function DashboardScreen({ navigation }) {
               </TouchableOpacity>
             </View>
           </View>
-          
-          {/* Greeting Box */}
-          <View style={styles.headerGreeting}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap' }}>
-              <Text style={[styles.welcomeHeaderText, { color: colors.textPrimary }]}>
-                {applications.length === 0 ? 'Welcome, ' : 'Welcome back, '}
-              </Text>
-              <Text style={[styles.welcomeNameAccent, { color: colors.cyan }]}>
-                {userInfo?.name?.split(' ')[0] || 'User'} 👋
-              </Text>
-            </View>
-            <Text style={[styles.welcomeSubtitleText, { color: colors.textSecondary }]} numberOfLines={1}>
-              {applications.length === 0 
-                ? 'Start tracking your applications today.' 
-                : 'Track every application. Never miss an opportunity.'}
-            </Text>
-          </View>
         </View>
 
         {/* Offline Alert Bar */}
@@ -274,6 +257,22 @@ export default function DashboardScreen({ navigation }) {
             />
           }
         >
+          {/* Welcome Greeting Card */}
+          <View style={[styles.greetingCardContainer, { backgroundColor: colors.cardBg, borderColor: colors.border, shadowColor: colors.shadow }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap' }}>
+              <Text style={[styles.welcomeHeaderText, { color: colors.textPrimary }]}>
+                {applications.length === 0 ? 'Welcome, ' : 'Welcome back, '}
+              </Text>
+              <Text style={[styles.welcomeNameAccent, { color: colors.cyan }]}>
+                {userInfo?.name?.split(' ')[0] || 'User'} 👋
+              </Text>
+            </View>
+            <Text style={[styles.welcomeSubtitleText, { color: colors.textSecondary }]} numberOfLines={1}>
+              {applications.length === 0 
+                ? 'Start tracking your applications today.' 
+                : 'Track every application. Never miss an opportunity.'}
+            </Text>
+          </View>
           {/* Goal & Career Coach Card (Motivating and highly useful replacement for Pulse Monitor) */}
           <View style={[styles.pulseCard, { backgroundColor: colors.cardBg, borderColor: colors.border, shadowColor: colors.shadow }]}>
             <View style={styles.pulseHeader}>
@@ -532,10 +531,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   header: {
-    flexDirection: 'column',
     paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 14,
+    paddingTop: 16,
+    paddingBottom: 12,
     borderBottomWidth: 1.5,
   },
   headerTopRow: {
@@ -543,7 +541,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     width: '100%',
-    marginBottom: 12,
   },
   headerLeft: {
     flexDirection: 'row',
@@ -579,11 +576,17 @@ const styles = StyleSheet.create({
       }
     })
   },
-  headerGreeting: {
-    width: '100%',
+  greetingCardContainer: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 16,
+    marginBottom: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 2,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    elevation: 2,
   },
   welcomeHeaderText: {
     fontSize: 15,
