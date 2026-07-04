@@ -203,16 +203,42 @@ export default function DashboardScreen({ navigation }) {
         <BackgroundBubbles />
         {/* Top Header */}
         <View style={[styles.header, { borderBottomColor: colors.border }]}>
-          <View style={styles.headerLeft}>
-            <AppLogo size={32} />
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: 4 }}>
-              <Text style={[styles.brandTextPrimary, { color: colors.textPrimary }]}>Pinged</Text>
-              <Text style={[styles.brandTextAccent, { color: colors.cyan }]}>Yet</Text>
+          {/* Top Row: Logo + Controls */}
+          <View style={styles.headerTopRow}>
+            <View style={styles.headerLeft}>
+              <AppLogo size={32} />
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: 4 }}>
+                <Text style={[styles.brandTextPrimary, { color: colors.textPrimary }]}>Pinged</Text>
+                <Text style={[styles.brandTextAccent, { color: colors.cyan }]}>Yet</Text>
+              </View>
+            </View>
+
+            <View style={styles.headerRight}>
+              <TouchableOpacity 
+                style={[styles.headerIconBtn, { borderColor: colors.border }]}
+                onPress={toggleTheme}
+                activeOpacity={0.7}
+              >
+                <MaterialCommunityIcons 
+                  name={isDark ? "weather-sunny" : "weather-night"} 
+                  size={16} 
+                  color={colors.textPrimary} 
+                />
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[styles.headerIconBtn, { borderColor: colors.error + '40', backgroundColor: colors.error + '05' }]}
+                onPress={handleLogout}
+                activeOpacity={0.7}
+              >
+                <MaterialCommunityIcons name="power" size={16} color={colors.error} />
+              </TouchableOpacity>
             </View>
           </View>
           
-          <View style={styles.headerCenter}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+          {/* Greeting Box */}
+          <View style={styles.headerGreeting}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap' }}>
               <Text style={[styles.welcomeHeaderText, { color: colors.textPrimary }]}>
                 {applications.length === 0 ? 'Welcome, ' : 'Welcome back, '}
               </Text>
@@ -225,28 +251,6 @@ export default function DashboardScreen({ navigation }) {
                 ? 'Start tracking your applications today.' 
                 : 'Track every application. Never miss an opportunity.'}
             </Text>
-          </View>
-
-          <View style={styles.headerRight}>
-            <TouchableOpacity 
-              style={[styles.headerIconBtn, { borderColor: colors.border }]}
-              onPress={toggleTheme}
-              activeOpacity={0.7}
-            >
-              <MaterialCommunityIcons 
-                name={isDark ? "weather-sunny" : "weather-night"} 
-                size={16} 
-                color={colors.textPrimary} 
-              />
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={[styles.headerIconBtn, { borderColor: colors.error + '40', backgroundColor: colors.error + '05' }]}
-              onPress={handleLogout}
-              activeOpacity={0.7}
-            >
-              <MaterialCommunityIcons name="power" size={16} color={colors.error} />
-            </TouchableOpacity>
           </View>
         </View>
 
@@ -528,17 +532,22 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   header: {
+    flexDirection: 'column',
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 14,
+    borderBottomWidth: 1.5,
+  },
+  headerTopRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 24,
-    paddingBottom: 18,
+    width: '100%',
+    marginBottom: 12,
   },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    width: '35%',
   },
   brandTextPrimary: {
     fontSize: 18,
@@ -570,10 +579,11 @@ const styles = StyleSheet.create({
       }
     })
   },
-  headerCenter: {
-    width: '40%',
+  headerGreeting: {
+    width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: 2,
   },
   welcomeHeaderText: {
     fontSize: 15,
@@ -618,7 +628,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
-    width: '25%',
     gap: 8,
   },
   headerIconBtn: {
