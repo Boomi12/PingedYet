@@ -22,6 +22,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import ApplicationCard from '../components/ApplicationCard';
 import CursorSparkles from '../components/CursorSparkles';
 import BackgroundBubbles from '../components/BackgroundBubbles';
+import DraggableRow from '../components/DraggableRow';
 
 export default function ApplicationListScreen({ route, navigation }) {
   const { colors, isDark } = useContext(ThemeContext);
@@ -43,6 +44,8 @@ export default function ApplicationListScreen({ route, navigation }) {
   const [tempFilters, setTempFilters] = useState(initialFilters);
   
   const [isFilterModalVisible, setIsFilterModalVisible] = useState(false);
+  const [isReorderMode, setIsReorderMode] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
 
@@ -76,6 +79,17 @@ export default function ApplicationListScreen({ route, navigation }) {
 
   // Combined Filters Logic
   useEffect(() => {
+    // Disable reorder mode if any filter becomes active
+    const hasActiveFilters = activeFilters.status !== 'All' || 
+                             activeFilters.workMode !== 'All' || 
+                             activeFilters.stipend !== 'All' || 
+                             activeFilters.location.trim() !== '' || 
+                             activeFilters.duration.trim() !== '' || 
+                             searchQuery.trim() !== '';
+    if (hasActiveFilters) {
+      setIsReorderMode(false);
+    }
+
     let result = [...allApplications];
 
     // 1. Status Filter
@@ -173,6 +187,29 @@ export default function ApplicationListScreen({ route, navigation }) {
     }));
   };
 
+  const handleDragEnd = async (fromIndex, toIndex) => {
+    setIsDragging(false);
+    if (fromIndex === toIndex) return;
+
+    // Swap elements in local state
+    const updated = [...filteredApplications];
+    const [moved] = updated.splice(fromIndex, 1);
+    updated.splice(toIndex, 0, moved);
+    
+    setFilteredApplications(updated);
+    setAllApplications(updated);
+
+    try {
+      const ids = updated.map(app => app._id || app.id);
+      await applicationService.reorder(ids);
+      console.log('[Reorder] Database order updated successfully.');
+    } catch (error) {
+      console.error('[Reorder] Failed to save order:', error.message);
+      Alert.alert('Reorder Failed', 'Could not save the new order. Please try again.');
+      loadApplications();
+    }
+  };
+
   const isTotalDatabaseEmpty = allApplications.length === 0;
 
   const getActiveChips = () => {
@@ -212,6 +249,29 @@ export default function ApplicationListScreen({ route, navigation }) {
         {/* Header */}
         <View style={styles.header}>
           <Text style={[styles.titleText, { color: colors.textPrimary }]}>Applications</Text>
+          {!isAnyFilterActive && allApplications.length > 1 && (
+            <TouchableOpacity 
+              style={[
+                styles.reorderToggleBtn, 
+                { 
+                  borderColor: isReorderMode ? colors.cyan : colors.border,
+                  backgroundColor: isReorderMode ? colors.cyan + '12' : 'transparent'
+                }
+              ]}
+              onPress={() => setIsReorderMode(!isReorderMode)}
+              activeOpacity={0.7}
+            >
+              <MaterialCommunityIcons 
+                name={isReorderMode ? "check-circle" : "swap-vertical"} 
+                size={16} 
+                color={isReorderMode ? colors.cyan : colors.textPrimary} 
+                style={{ marginRight: 4 }}
+              />
+              <Text style={[styles.reorderToggleText, { color: isReorderMode ? colors.cyan : colors.textPrimary }]}>
+                {isReorderMode ? "Done" : "Reorder"}
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Search & Filter Button Row */}
@@ -305,22 +365,32 @@ export default function ApplicationListScreen({ route, navigation }) {
           <FlatList
             data={filteredApplications}
             keyExtractor={(item) => item.id || item._id}
-            renderItem={({ item }) => (
-              <ApplicationCard
-                application={{
-                  ...item,
-                  id: item.id || item._id,
-                  platform: item.platform || item.platformAppliedFrom,
-                }}
-                onPress={() => navigation.navigate('ApplicationDetails', { id: item.id || item._id })}
-                onStatusUpdate={handleQuickStatusUpdate}
-                onDeleteRefresh={loadApplications}
-              />
+            scrollEnabled={!isDragging}
+            renderItem={({ item, index }) => (
+              <DraggableRow
+                isReorderMode={isReorderMode}
+                index={index}
+                totalItems={filteredApplications.length}
+                onDragStart={() => setIsDragging(true)}
+                onDragEnd={handleDragEnd}
+                colors={colors}
+              >
+                <ApplicationCard
+                  application={{
+                    ...item,
+                    id: item.id || item._id,
+                    platform: item.platform || item.platformAppliedFrom,
+                  }}
+                  onPress={() => !isReorderMode && navigation.navigate('ApplicationDetails', { id: item.id || item._id })}
+                  onStatusUpdate={handleQuickStatusUpdate}
+                  onDeleteRefresh={loadApplications}
+                />
+              </DraggableRow>
             )}
             contentContainerStyle={[styles.listContent, activeChips.length > 0 && { paddingTop: 8 }]}
             showsVerticalScrollIndicator={false}
-            onRefresh={loadApplications}
-            refreshing={isLoading}
+            onRefresh={isReorderMode ? null : loadApplications}
+            refreshing={isReorderMode ? false : isLoading}
             ListEmptyComponent={
               isTotalDatabaseEmpty ? (
                 <View style={[styles.emptyContainer, { backgroundColor: colors.cardBg, borderColor: colors.border, shadowColor: colors.shadow }]}>
@@ -775,6 +845,18 @@ const styles = StyleSheet.create({
   filterApplyBtnText: {
     color: '#FFF',
     fontSize: 13,
+    fontWeight: '800',
+  },
+  reorderToggleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1.2,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  reorderToggleText: {
+    fontSize: 12,
     fontWeight: '800',
   },
 });
