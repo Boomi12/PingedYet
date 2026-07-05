@@ -97,38 +97,6 @@ export const authService = {
       handleApiError(error);
     }
   },
-  verifyOtp: async (email, otp) => {
-    try {
-      const response = await api.post('/api/auth/verify-otp', { email, otp });
-      return response.data;
-    } catch (error) {
-      handleApiError(error);
-    }
-  },
-  resendOtp: async (email) => {
-    try {
-      const response = await api.post('/api/auth/resend-otp', { email });
-      return response.data;
-    } catch (error) {
-      handleApiError(error);
-    }
-  },
-  forgotPassword: async (email) => {
-    try {
-      const response = await api.post('/api/auth/forgot-password', { email });
-      return response.data;
-    } catch (error) {
-      handleApiError(error);
-    }
-  },
-  resetPassword: async (email, otp, newPassword) => {
-    try {
-      const response = await api.post('/api/auth/reset-password', { email, otp, newPassword });
-      return response.data;
-    } catch (error) {
-      handleApiError(error);
-    }
-  },
 };
 
 export const applicationService = {

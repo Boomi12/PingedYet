@@ -62,21 +62,7 @@ export default function LoginScreen({ navigation }) {
     const result = await signIn(email.trim(), password.trim());
     
     if (!result.success) {
-      if (result.error && result.error.toLowerCase().includes('verify')) {
-        Alert.alert(
-          'Verification Required',
-          'Please verify your email address before logging in.',
-          [
-            { text: 'Cancel', style: 'cancel' },
-            { 
-              text: 'Verify Now', 
-              onPress: () => navigation.navigate('OtpVerification', { email: email.trim() }) 
-            }
-          ]
-        );
-      } else {
-        setGeneralError(result.error || 'Invalid email or password.');
-      }
+      setGeneralError(result.error || 'Invalid email or password.');
       setIsSubmitting(false);
     }
   };
@@ -195,16 +181,6 @@ export default function LoginScreen({ navigation }) {
                 />
                 {passwordError ? <Text style={[styles.errorLabelText, { color: colors.error }]}>{passwordError}</Text> : null}
               </View>
-
-              {/* Forgot Password Link */}
-              <TouchableOpacity 
-                style={styles.forgotPasswordContainer} 
-                onPress={() => navigation.navigate('ForgotPassword')}
-                disabled={isSubmitting}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.forgotPasswordText, { color: colors.textSecondary }]}>Forgot Password?</Text>
-              </TouchableOpacity>
 
               {/* Login Button */}
               <TouchableOpacity 
@@ -435,16 +411,6 @@ const styles = StyleSheet.create({
   },
   linkText: {
     fontSize: 13,
-    fontWeight: '700',
-    textDecorationLine: 'underline',
-  },
-  forgotPasswordContainer: {
-    alignSelf: 'flex-end',
-    marginBottom: 20,
-    marginTop: -8,
-  },
-  forgotPasswordText: {
-    fontSize: 12,
     fontWeight: '700',
     textDecorationLine: 'underline',
   },

@@ -16,9 +16,6 @@ import AddApplicationScreen from '../screens/AddApplicationScreen';
 import ApplicationDetailsScreen from '../screens/ApplicationDetailsScreen';
 import EditApplicationScreen from '../screens/EditApplicationScreen';
 import ProfileScreen from '../screens/ProfileScreen';
-import OtpVerificationScreen from '../screens/OtpVerificationScreen';
-import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
-import ResetPasswordScreen from '../screens/ResetPasswordScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -112,9 +109,6 @@ export default function AppNavigator() {
           <>
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Register" component={RegisterScreen} />
-            <Stack.Screen name="OtpVerification" component={OtpVerificationScreen} />
-            <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
-            <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
           </>
         ) : (
           <>
