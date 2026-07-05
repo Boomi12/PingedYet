@@ -8,9 +8,9 @@ const Application = require('../models/Application');
 const getApplications = async (req, res) => {
   try {
     // Return only applications that match the logged-in user's ID
-    // Sort by orderIndex first, then by createdAt newest first
+    // Sort by orderIndex first, then by appliedDate descending, then by createdAt newest first
     const applications = await Application.find({ userId: req.user.id })
-      .sort({ orderIndex: 1, createdAt: -1 });
+      .sort({ orderIndex: 1, appliedDate: -1, createdAt: -1 });
     return res.json(applications);
   } catch (error) {
     console.error('[Application Controller] Get error:', error.message);
@@ -248,12 +248,18 @@ const deleteApplication = async (req, res) => {
  * @access  Private
  */
 const reorderApplications = async (req, res) => {
-  const { ids } = req.body;
-  if (!ids || !Array.isArray(ids)) {
-    return res.status(400).json({ message: 'Array of application IDs is required' });
-  }
+  const { ids, reset } = req.body;
 
   try {
+    if (reset) {
+      await Application.updateMany({ userId: req.user.id }, { $set: { orderIndex: 0 } });
+      return res.json({ message: 'Applications order reset successfully' });
+    }
+
+    if (!ids || !Array.isArray(ids)) {
+      return res.status(400).json({ message: 'Array of application IDs is required' });
+    }
+
     const bulkOps = ids.map((id, index) => ({
       updateOne: {
         filter: { _id: id, userId: req.user.id },

@@ -210,6 +210,47 @@ export default function ApplicationListScreen({ route, navigation }) {
     }
   };
 
+  const handleResetOrder = () => {
+    const performReset = async () => {
+      try {
+        setIsLoading(true);
+        await applicationService.reorder([], true);
+        setIsReorderMode(false);
+        await loadApplications();
+        if (Platform.OS === 'web') {
+          window.alert('Success: Order has been automatically reset to latest applied dates.');
+        } else {
+          Alert.alert('Success', 'Order has been automatically reset to latest applied dates.');
+        }
+      } catch (error) {
+        console.error('[Reorder] Reset failed:', error.message);
+        if (Platform.OS === 'web') {
+          window.alert(`Reset Failed: ${error.message || 'Could not reset positions.'}`);
+        } else {
+          Alert.alert('Reset Failed', error.message || 'Could not reset positions.');
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      const confirmReset = window.confirm('Are you sure you want to clear your custom card order and automatically sort everything by latest applied dates?');
+      if (confirmReset) {
+        performReset();
+      }
+    } else {
+      Alert.alert(
+        'Reset Card Order',
+        'Are you sure you want to clear your custom card order and automatically sort everything by latest applied dates?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Reset', style: 'destructive', onPress: performReset }
+        ]
+      );
+    }
+  };
+
   const isTotalDatabaseEmpty = allApplications.length === 0;
 
   const getActiveChips = () => {
@@ -341,6 +382,23 @@ export default function ApplicationListScreen({ route, navigation }) {
                 <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: '700' }}>Clear All</Text>
               </TouchableOpacity>
             </ScrollView>
+          </View>
+        )}
+
+        {/* Reorder Mode Controls Banner */}
+        {isReorderMode && (
+          <View style={[styles.reorderControlsBanner, { backgroundColor: colors.cyan + '10', borderColor: colors.cyan + '30' }]}>
+            <Text style={[styles.reorderBannerText, { color: colors.textSecondary }]}>
+              Drag cards to reorder. Tap checkmark to close.
+            </Text>
+            <TouchableOpacity 
+              style={[styles.resetOrderBtn, { borderColor: colors.border, backgroundColor: colors.cardBg }]}
+              onPress={handleResetOrder}
+              activeOpacity={0.7}
+            >
+              <MaterialCommunityIcons name="undo-variant" size={12} color={colors.cyan} style={{ marginRight: 4 }} />
+              <Text style={[styles.resetOrderBtnText, { color: colors.cyan }]}>Reset to Dates</Text>
+            </TouchableOpacity>
           </View>
         )}
 
@@ -853,5 +911,34 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  reorderControlsBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginHorizontal: 20,
+    marginTop: 10,
+    marginBottom: 6,
+    padding: 10,
+    borderRadius: 12,
+    borderWidth: 1.2,
+  },
+  reorderBannerText: {
+    fontSize: 11,
+    fontWeight: '700',
+    flex: 1,
+    marginRight: 10,
+  },
+  resetOrderBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1.2,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  resetOrderBtnText: {
+    fontSize: 11,
+    fontWeight: '800',
   },
 });

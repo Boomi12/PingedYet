@@ -140,9 +140,9 @@ export const applicationService = {
       handleApiError(error);
     }
   },
-  reorder: async (ids) => {
+  reorder: async (ids, reset = false) => {
     try {
-      const response = await api.put('/api/applications/reorder', { ids });
+      const response = await api.put('/api/applications/reorder', { ids, reset });
       return response.data;
     } catch (error) {
       handleApiError(error);
