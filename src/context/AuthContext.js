@@ -51,7 +51,6 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const signIn = async (email, password) => {
-    setIsLoading(true);
     try {
       const data = await authService.login(email, password);
       // Data format returned: { id, name, email, createdAt, token }
@@ -65,24 +64,17 @@ export const AuthProvider = ({ children }) => {
       });
       return { success: true };
     } catch (error) {
-      setIsLoading(false);
       return { success: false, error: error.message };
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const signUp = async (name, email, password) => {
-    setIsLoading(true);
     try {
       const data = await authService.register(name, email, password);
       // Return verification requirement instead of logging in directly
       return { success: true, needsVerification: true, email: data.email };
     } catch (error) {
-      setIsLoading(false);
       return { success: false, error: error.message };
-    } finally {
-      setIsLoading(false);
     }
   };
 
