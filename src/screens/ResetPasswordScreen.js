@@ -6,77 +6,78 @@ import {
   TextInput, 
   TouchableOpacity, 
   SafeAreaView, 
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView
+  ActivityIndicator, 
+  KeyboardAvoidingView, 
+  Platform, 
+  ScrollView,
+  Alert
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { ThemeContext } from '../context/ThemeContext';
-import { AuthContext } from '../context/AuthContext';
+import { authService } from '../services/api';
 import AppLogo from '../components/AppLogo';
 import CursorSparkles from '../components/CursorSparkles';
 import BackgroundBubbles from '../components/BackgroundBubbles';
 
-export default function RegisterScreen({ navigation }) {
+export default function ResetPasswordScreen({ route, navigation }) {
   const { colors, isDark } = useContext(ThemeContext);
-  const { signUp } = useContext(AuthContext);
 
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const email = route?.params?.email || '';
+
+  const [otp, setOtp] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorText, setErrorText] = useState('');
   const [focusedInput, setFocusedInput] = useState(null);
 
-  // Validation States
-  const [nameError, setNameError] = useState('');
-  const [emailError, setEmailError] = useState('');
+  const [otpError, setOtpError] = useState('');
   const [passwordError, setPasswordError] = useState('');
-  const [generalError, setGeneralError] = useState('');
+  const [confirmError, setConfirmError] = useState('');
 
-  const handleRegister = async () => {
-    setNameError('');
-    setEmailError('');
+  const handleResetPassword = async () => {
+    setOtpError('');
     setPasswordError('');
-    setGeneralError('');
+    setConfirmError('');
+    setErrorText('');
 
     let hasError = false;
 
-    if (!name.trim()) {
-      setNameError('Name is required.');
+    if (otp.length !== 6) {
+      setOtpError('Reset code must be exactly 6 digits.');
       hasError = true;
     }
 
-    if (!email.trim()) {
-      setEmailError('Email is required.');
+    if (!newPassword.trim()) {
+      setPasswordError('New password is required.');
       hasError = true;
-    } else {
-      const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
-      if (!emailRegex.test(email.trim())) {
-        setEmailError('Please enter a valid email address.');
-        hasError = true;
-      }
-    }
-
-    if (!password.trim()) {
-      setPasswordError('Password is required.');
-      hasError = true;
-    } else if (password.length < 6) {
+    } else if (newPassword.length < 6) {
       setPasswordError('Password must be at least 6 characters.');
+      hasError = true;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setConfirmError('Passwords do not match.');
       hasError = true;
     }
 
     if (hasError) return;
 
     setIsSubmitting(true);
-    const result = await signUp(name.trim(), email.trim(), password.trim());
-    
-    if (result.success) {
-      setIsSubmitting(false);
-      navigation.navigate('OtpVerification', { email: email.trim() });
-    } else {
-      setGeneralError(result.error || 'Failed to create an account.');
+    try {
+      await authService.resetPassword(email, otp, newPassword);
+      
+      if (Platform.OS === 'web') {
+        window.alert('Success: Your password has been reset successfully. You can now log in.');
+      } else {
+        Alert.alert('Success', 'Your password has been reset successfully. You can now log in.');
+      }
+
+      navigation.navigate('Login');
+    } catch (err) {
+      setErrorText(err.message || 'Failed to reset password. Please try again.');
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -112,7 +113,7 @@ export default function RegisterScreen({ navigation }) {
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
           >
-            {/* Logo / Header Branding */}
+            {/* Header / Brand Logo */}
             <View style={styles.logoContainer}>
               <View style={styles.logoMargin}>
                 <AppLogo size={64} />
@@ -122,90 +123,62 @@ export default function RegisterScreen({ navigation }) {
                 <Text style={[styles.brandTextAccent, { color: colors.cyan }]}>Yet</Text>
               </View>
               <Text style={[styles.logoSubtitle, { color: colors.textSecondary }]}>
-                Track every application. Never miss an opportunity.
+                NEXT-GEN APPLICATION TRACKING
               </Text>
             </View>
 
-            {/* General Error Panel */}
-            {generalError ? (
-              <View style={[styles.errorAlertCard, { backgroundColor: colors.error + '10', borderColor: colors.error + '30' }]}>
+            {/* Error Alert Card */}
+            {errorText ? (
+              <View style={[styles.errorCard, { backgroundColor: colors.error + '10', borderColor: colors.error + '30' }]}>
                 <MaterialCommunityIcons name="alert-decagram-outline" size={20} color={colors.error} />
-                <Text style={[styles.errorAlertText, { color: colors.error }]}>{generalError}</Text>
+                <Text style={[styles.errorTextLabel, { color: colors.error }]}>{errorText}</Text>
               </View>
             ) : null}
 
-            {/* Form Card */}
-            <View style={[
-              styles.formCard, 
-              { 
-                backgroundColor: colors.cardBg, 
-                borderColor: colors.border, 
-                shadowColor: colors.shadow 
-              }
-            ]}>
-              <Text style={[styles.cardCornerTag, { color: colors.cyan }]}>SYS_AUTH // v1.0</Text>
+            {/* Form Container */}
+            <View style={[styles.formCard, { backgroundColor: colors.cardBg, borderColor: colors.border, shadowColor: colors.shadow }]}>
+              <Text style={[styles.cornerTag, { color: colors.cyan }]}>SYS_RESET // OTP</Text>
               
-              <View style={styles.formHeaderRow}>
-                <Text style={[styles.formTitle, { color: colors.textPrimary }]}>Create Account</Text>
-                <View style={[styles.titleDot, { backgroundColor: colors.cyan }]} />
-              </View>
-              
-              {/* Name */}
-              <Text style={[styles.label, { color: colors.textSecondary }]}>Full Name</Text>
+              <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>Create New Password</Text>
+              <Text style={[styles.cardDescription, { color: colors.textSecondary }]}>
+                Enter the 6-digit recovery code sent to:{'\n'}
+                <Text style={{ color: colors.cyan, fontWeight: '700' }}>{email || 'your email'}</Text>
+              </Text>
+
+              {/* 6-Digit Code Input */}
+              <Text style={[styles.label, { color: colors.textSecondary }]}>6-Digit Recovery Code</Text>
               <View style={styles.inputContainer}>
                 <TextInput
-                  style={getInputStyle('name', !!nameError)}
-                  placeholder="Ada Lovelace"
+                  style={getInputStyle('otp', !!otpError)}
+                  placeholder="0 0 0 0 0 0"
                   placeholderTextColor={colors.textMuted}
-                  value={name}
-                  onChangeText={(text) => {
-                    setName(text);
-                    if (nameError) setNameError('');
-                    if (generalError) setGeneralError('');
+                  value={otp}
+                  onChangeText={(val) => {
+                    setOtpError('');
+                    const numeric = val.replace(/[^0-9]/g, '');
+                    setOtp(numeric.substring(0, 6));
                   }}
-                  onFocus={() => setFocusedInput('name')}
+                  keyboardType="number-pad"
+                  maxLength={6}
+                  onFocus={() => setFocusedInput('otp')}
                   onBlur={() => setFocusedInput(null)}
                   keyboardAppearance="dark"
                   editable={!isSubmitting}
                 />
-                {nameError ? <Text style={[styles.errorLabelText, { color: colors.error }]}>{nameError}</Text> : null}
+                {otpError ? <Text style={[styles.errorLabelText, { color: colors.error }]}>{otpError}</Text> : null}
               </View>
 
-              {/* Email */}
-              <Text style={[styles.label, { color: colors.textSecondary }]}>Email Address</Text>
-              <View style={styles.inputContainer}>
-                <TextInput
-                  style={getInputStyle('email', !!emailError)}
-                  placeholder="ada@example.com"
-                  placeholderTextColor={colors.textMuted}
-                  value={email}
-                  onChangeText={(text) => {
-                    setEmail(text);
-                    if (emailError) setEmailError('');
-                    if (generalError) setGeneralError('');
-                  }}
-                  onFocus={() => setFocusedInput('email')}
-                  onBlur={() => setFocusedInput(null)}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  keyboardAppearance="dark"
-                  editable={!isSubmitting}
-                />
-                {emailError ? <Text style={[styles.errorLabelText, { color: colors.error }]}>{emailError}</Text> : null}
-              </View>
-
-              {/* Password */}
-              <Text style={[styles.label, { color: colors.textSecondary }]}>Password</Text>
+              {/* New Password Input */}
+              <Text style={[styles.label, { color: colors.textSecondary }]}>New Password</Text>
               <View style={styles.inputContainer}>
                 <TextInput
                   style={getInputStyle('password', !!passwordError)}
-                  placeholder="At least 6 characters"
+                  placeholder="••••••••"
                   placeholderTextColor={colors.textMuted}
-                  value={password}
+                  value={newPassword}
                   onChangeText={(text) => {
-                    setPassword(text);
-                    if (passwordError) setPasswordError('');
-                    if (generalError) setGeneralError('');
+                    setPasswordError('');
+                    setNewPassword(text);
                   }}
                   onFocus={() => setFocusedInput('password')}
                   onBlur={() => setFocusedInput(null)}
@@ -217,39 +190,60 @@ export default function RegisterScreen({ navigation }) {
                 {passwordError ? <Text style={[styles.errorLabelText, { color: colors.error }]}>{passwordError}</Text> : null}
               </View>
 
-              {/* Register Button */}
+              {/* Confirm Password Input */}
+              <Text style={[styles.label, { color: colors.textSecondary }]}>Confirm Password</Text>
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={getInputStyle('confirm', !!confirmError)}
+                  placeholder="••••••••"
+                  placeholderTextColor={colors.textMuted}
+                  value={confirmPassword}
+                  onChangeText={(text) => {
+                    setConfirmError('');
+                    setConfirmPassword(text);
+                  }}
+                  onFocus={() => setFocusedInput('confirm')}
+                  onBlur={() => setFocusedInput(null)}
+                  secureTextEntry
+                  autoCapitalize="none"
+                  keyboardAppearance="dark"
+                  editable={!isSubmitting}
+                />
+                {confirmError ? <Text style={[styles.errorLabelText, { color: colors.error }]}>{confirmError}</Text> : null}
+              </View>
+
+              {/* Reset Password Button */}
               <TouchableOpacity 
                 style={styles.btnWrapper}
-                onPress={handleRegister}
+                onPress={handleResetPassword}
                 disabled={isSubmitting}
                 activeOpacity={0.8}
               >
                 <LinearGradient
-                  colors={[colors.purple, colors.cyan]}
+                  colors={[colors.cyan, colors.purple]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
-                  style={styles.btnGradient}
+                  style={styles.resetBtn}
                 >
                   {isSubmitting ? (
                     <View style={styles.loaderRow}>
                       <ActivityIndicator size="small" color="#FFF" style={{ marginRight: 8 }} />
-                      <Text style={styles.btnText}>Registering...</Text>
+                      <Text style={styles.btnText}>Updating Password...</Text>
                     </View>
                   ) : (
                     <>
-                      <MaterialCommunityIcons name="account-plus-outline" size={18} color="#FFF" style={{ marginRight: 6 }} />
-                      <Text style={styles.btnText}>Sign Up</Text>
+                      <MaterialCommunityIcons name="lock-reset" size={18} color="#FFF" style={{ marginRight: 6 }} />
+                      <Text style={styles.btnText}>Reset Password</Text>
                     </>
                   )}
                 </LinearGradient>
               </TouchableOpacity>
             </View>
 
-            {/* Login Redirect */}
-            <View style={styles.loginPrompt}>
-              <Text style={[styles.promptText, { color: colors.textSecondary }]}>Already have an account?</Text>
+            {/* Back to Login */}
+            <View style={styles.backPrompt}>
               <TouchableOpacity onPress={() => navigation.navigate('Login')} disabled={isSubmitting}>
-                <Text style={[styles.linkText, { color: colors.cyan }]}>Log In</Text>
+                <Text style={[styles.backLinkText, { color: colors.textSecondary }]}>Back to Login</Text>
               </TouchableOpacity>
             </View>
           </ScrollView>
@@ -296,36 +290,15 @@ const styles = StyleSheet.create({
     fontWeight: '950',
     letterSpacing: 0.5,
     textAlign: 'center',
-    ...Platform.select({
-      ios: {
-        textShadowColor: 'rgba(0, 240, 255, 0.4)',
-        textShadowOffset: { width: 0, height: 0 },
-        textShadowRadius: 6,
-      },
-      android: {
-        textShadowColor: 'rgba(0, 240, 255, 0.4)',
-        textShadowOffset: { width: 0, height: 0 },
-        textShadowRadius: 6,
-      },
-      web: {
-        backgroundClip: 'text',
-        WebkitBackgroundClip: 'text',
-        backgroundImage: 'linear-gradient(90deg, #00F0FF, #FF007F)',
-        WebkitTextFillColor: 'transparent',
-        color: 'transparent',
-        textShadow: '0 0 8px rgba(0, 240, 255, 0.2)',
-      }
-    })
   },
   logoSubtitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    marginTop: 6,
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1.5,
+    marginTop: 8,
     textAlign: 'center',
-    paddingHorizontal: 16,
-    lineHeight: 18,
   },
-  errorAlertCard: {
+  errorCard: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1.5,
@@ -338,7 +311,7 @@ const styles = StyleSheet.create({
     maxWidth: 420,
     alignSelf: 'center',
   },
-  errorAlertText: {
+  errorTextLabel: {
     fontSize: 13,
     fontWeight: '700',
     flex: 1,
@@ -356,14 +329,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     position: 'relative',
   },
-  formHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 24,
-    gap: 6,
-  },
-  cardCornerTag: {
+  cornerTag: {
     position: 'absolute',
     top: 14,
     right: 18,
@@ -372,35 +338,37 @@ const styles = StyleSheet.create({
     letterSpacing: 1.5,
     opacity: 0.6,
   },
-  titleDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginTop: -2,
+  cardTitle: {
+    fontSize: 22,
+    fontWeight: '900',
+    textAlign: 'left',
+    marginTop: 10,
+    marginBottom: 8,
   },
-  formTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    textAlign: 'center',
+  cardDescription: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '600',
+    marginBottom: 22,
   },
   label: {
     fontSize: 11,
     fontWeight: '700',
     letterSpacing: 0.5,
     marginBottom: 6,
+    marginTop: 10,
     textTransform: 'uppercase',
   },
   inputContainer: {
-    marginBottom: 18,
+    marginBottom: 14,
   },
   input: {
+    height: 48,
     borderWidth: 1.5,
     borderRadius: 12,
+    paddingHorizontal: 16,
     fontSize: 14,
     fontWeight: '600',
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    height: 48,
   },
   errorLabelText: {
     fontSize: 11,
@@ -411,13 +379,12 @@ const styles = StyleSheet.create({
   btnWrapper: {
     borderRadius: 12,
     overflow: 'hidden',
-    marginTop: 8,
+    marginTop: 12,
   },
-  btnGradient: {
+  resetBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 14,
     height: 48,
   },
   loaderRow: {
@@ -430,21 +397,11 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 0.5,
   },
-  loginPrompt: {
-    flexDirection: 'row',
+  backPrompt: {
     alignItems: 'center',
-    justifyContent: 'center',
     marginTop: 28,
-    gap: 6,
-    width: '100%',
-    maxWidth: 420,
-    alignSelf: 'center',
   },
-  promptText: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  linkText: {
+  backLinkText: {
     fontSize: 13,
     fontWeight: '700',
     textDecorationLine: 'underline',

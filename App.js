@@ -76,6 +76,9 @@ export default function App() {
       screens: {
         Login: 'login',
         Register: 'register',
+        OtpVerification: 'verify',
+        ForgotPassword: 'forgot',
+        ResetPassword: 'reset',
         MainTabs: {
           path: '',
           screens: {
