@@ -32,7 +32,8 @@ export default function ApplicationListScreen({ route, navigation }) {
     workMode: 'All',
     stipend: 'All',
     location: '',
-    duration: ''
+    duration: '',
+    platform: 'All'
   };
 
   const [allApplications, setAllApplications] = useState([]);
@@ -83,6 +84,7 @@ export default function ApplicationListScreen({ route, navigation }) {
     const hasActiveFilters = activeFilters.status !== 'All' || 
                              activeFilters.workMode !== 'All' || 
                              activeFilters.stipend !== 'All' || 
+                             activeFilters.platform !== 'All' ||
                              activeFilters.location.trim() !== '' || 
                              activeFilters.duration.trim() !== '' || 
                              searchQuery.trim() !== '';
@@ -141,14 +143,21 @@ export default function ApplicationListScreen({ route, navigation }) {
       result = result.filter(app => app.duration && app.duration.toLowerCase().includes(durQuery));
     }
 
-    // 6. Search Bar query matching (Company, Role, and Platform)
+    // 6. Platform Filter
+    if (activeFilters.platform !== 'All') {
+      result = result.filter(app => {
+        const appPlatform = app.platform || app.platformAppliedFrom || 'Direct/Other';
+        return appPlatform === activeFilters.platform;
+      });
+    }
+
+    // 7. Search Bar query matching (Company and Role)
     if (searchQuery.trim() !== '') {
       const query = searchQuery.toLowerCase().trim();
       result = result.filter(
         app => 
           app.companyName.toLowerCase().includes(query) || 
-          app.role.toLowerCase().includes(query) ||
-          (app.platform && app.platform.toLowerCase().includes(query))
+          app.role.toLowerCase().includes(query)
       );
     }
 
@@ -184,7 +193,7 @@ export default function ApplicationListScreen({ route, navigation }) {
   const removeSpecificFilter = (key) => {
     setActiveFilters(prev => ({
       ...prev,
-      [key]: key === 'status' || key === 'workMode' || key === 'stipend' ? 'All' : ''
+      [key]: key === 'status' || key === 'workMode' || key === 'stipend' || key === 'platform' ? 'All' : ''
     }));
   };
 
@@ -271,8 +280,15 @@ export default function ApplicationListScreen({ route, navigation }) {
     if (activeFilters.duration.trim() !== '') {
       chips.push({ key: 'duration', label: `Dur: ${activeFilters.duration}` });
     }
+    if (activeFilters.platform !== 'All') {
+      chips.push({ key: 'platform', label: `Platform: ${activeFilters.platform}` });
+    }
     return chips;
   };
+
+  const uniquePlatforms = Array.from(
+    new Set(allApplications.map(app => app.platform || app.platformAppliedFrom || 'Direct/Other').filter(Boolean))
+  );
 
   const activeChips = getActiveChips();
   const isAnyFilterActive = activeChips.length > 0 || searchQuery.trim() !== '';
@@ -298,7 +314,7 @@ export default function ApplicationListScreen({ route, navigation }) {
           <View style={[styles.searchContainer, { backgroundColor: colors.cardBg, borderColor: colors.border, flex: 1 }]}>
             <MaterialCommunityIcons name="magnify" size={22} color={colors.textMuted} style={styles.searchIcon} />
             <TextInput
-              placeholder="Search company, role or platform..."
+              placeholder="Search company or role..."
               placeholderTextColor={colors.textMuted}
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -569,6 +585,29 @@ export default function ApplicationListScreen({ route, navigation }) {
                         {st}
                       </Text>
                       {isSelected && <MaterialCommunityIcons name="check" size={16} color={colors.cyan} />}
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              {/* Platform Section */}
+              <Text style={[styles.filterSectionLabel, { color: colors.textSecondary }]}>Platform</Text>
+              <View style={styles.filterOptionsGrid}>
+                {['All', ...uniquePlatforms].map(p => {
+                  const isSelected = tempFilters.platform === p;
+                  return (
+                    <TouchableOpacity
+                      key={p}
+                      style={[
+                        styles.filterGridBtn,
+                        { borderColor: colors.border, backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#FFFFFF' },
+                        isSelected && { borderColor: colors.cyan, backgroundColor: colors.cyan + '18' }
+                      ]}
+                      onPress={() => setTempFilters(prev => ({ ...prev, platform: p }))}
+                    >
+                      <Text style={[styles.filterGridBtnText, { color: isSelected ? colors.cyan : colors.textSecondary }]}>
+                        {p}
+                      </Text>
                     </TouchableOpacity>
                   );
                 })}
