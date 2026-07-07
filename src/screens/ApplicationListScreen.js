@@ -141,13 +141,14 @@ export default function ApplicationListScreen({ route, navigation }) {
       result = result.filter(app => app.duration && app.duration.toLowerCase().includes(durQuery));
     }
 
-    // 6. Search Bar query matching (Company and Role)
+    // 6. Search Bar query matching (Company, Role, and Platform)
     if (searchQuery.trim() !== '') {
       const query = searchQuery.toLowerCase().trim();
       result = result.filter(
         app => 
           app.companyName.toLowerCase().includes(query) || 
-          app.role.toLowerCase().includes(query)
+          app.role.toLowerCase().includes(query) ||
+          (app.platform && app.platform.toLowerCase().includes(query))
       );
     }
 
@@ -297,7 +298,7 @@ export default function ApplicationListScreen({ route, navigation }) {
           <View style={[styles.searchContainer, { backgroundColor: colors.cardBg, borderColor: colors.border, flex: 1 }]}>
             <MaterialCommunityIcons name="magnify" size={22} color={colors.textMuted} style={styles.searchIcon} />
             <TextInput
-              placeholder="Search company or role..."
+              placeholder="Search company, role or platform..."
               placeholderTextColor={colors.textMuted}
               value={searchQuery}
               onChangeText={setSearchQuery}

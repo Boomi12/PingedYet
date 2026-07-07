@@ -51,6 +51,17 @@ const SUGGESTED_ROLES = [
 
 const DURATION_SUGGESTIONS = ['3 months', '6 months', 'Full-time', 'Part-time'];
 
+const SUGGESTED_PLATFORMS = [
+  "LinkedIn",
+  "Internshala",
+  "Indeed",
+  "Naukri",
+  "Wellfound (AngelList)",
+  "Glassdoor",
+  "Unstop",
+  "Direct/Other"
+];
+
 export default function AddApplicationScreen({ navigation }) {
   const { colors, isDark } = useContext(ThemeContext);
 
@@ -94,6 +105,10 @@ export default function AddApplicationScreen({ navigation }) {
   const [roleSuggestions, setRoleSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
+  const [mostUsedPlatforms, setMostUsedPlatforms] = useState([]);
+  const [platformSuggestions, setPlatformSuggestions] = useState([]);
+  const [showPlatformSuggestions, setShowPlatformSuggestions] = useState(false);
+
   // Validation States
   const [companyError, setCompanyError] = useState('');
   const [roleError, setRoleError] = useState('');
@@ -107,28 +122,41 @@ export default function AddApplicationScreen({ navigation }) {
   const [focusedInput, setFocusedInput] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Load user's applications on mount to find most used roles
+  // Load user's applications on mount to find most used roles and platforms
   useEffect(() => {
-    const fetchRoles = async () => {
+    const fetchData = async () => {
       try {
         const list = await applicationService.getAll();
         if (list) {
-          const counts = {};
+          // Roles autocomplete setup
+          const roleCounts = {};
           list.forEach(app => {
             if (app.role) {
               const r = app.role.trim();
-              counts[r] = (counts[r] || 0) + 1;
+              roleCounts[r] = (roleCounts[r] || 0) + 1;
             }
           });
-          // Sort roles by frequency descending
-          const sorted = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
-          setMostUsedRoles(sorted);
+          const sortedRoles = Object.keys(roleCounts).sort((a, b) => roleCounts[b] - roleCounts[a]);
+          setMostUsedRoles(sortedRoles);
+
+          // Platforms autocomplete setup
+          const platformCounts = {};
+          list.forEach(app => {
+            if (app.platform) {
+              const p = app.platform.trim();
+              if (p !== 'Direct/Other' && p !== '') {
+                platformCounts[p] = (platformCounts[p] || 0) + 1;
+              }
+            }
+          });
+          const sortedPlatforms = Object.keys(platformCounts).sort((a, b) => platformCounts[b] - platformCounts[a]);
+          setMostUsedPlatforms(sortedPlatforms);
         }
       } catch (e) {
-        console.warn('[AddApplicationScreen] Failed to load roles for autocomplete:', e);
+        console.warn('[AddApplicationScreen] Failed to load metadata for autocomplete:', e);
       }
     };
-    fetchRoles();
+    fetchData();
   }, []);
 
   const handleRoleChange = (text) => {
@@ -179,6 +207,30 @@ export default function AddApplicationScreen({ navigation }) {
     }
   };
 
+  const handlePlatformChange = (text) => {
+    setPlatform(text);
+
+    if (text.trim() === '') {
+      const combined = Array.from(new Set([...mostUsedPlatforms, ...SUGGESTED_PLATFORMS]));
+      setPlatformSuggestions(combined.slice(0, 5));
+    } else {
+      const trimmed = text.toLowerCase().trim();
+      const combinedList = Array.from(new Set([...mostUsedPlatforms, ...SUGGESTED_PLATFORMS]));
+      const matched = combinedList.filter(p => p.toLowerCase().includes(trimmed));
+
+      matched.sort((a, b) => {
+        const idxA = mostUsedPlatforms.indexOf(a);
+        const idxB = mostUsedPlatforms.indexOf(b);
+        if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+        if (idxA !== -1) return -1;
+        if (idxB !== -1) return 1;
+        return 0;
+      });
+
+      setPlatformSuggestions(matched);
+    }
+  };
+
   const resetForm = () => {
     setCompanyName('');
     setRole('');
@@ -200,6 +252,8 @@ export default function AddApplicationScreen({ navigation }) {
     setGeneralError('');
     setRoleSuggestions([]);
     setShowSuggestions(false);
+    setPlatformSuggestions([]);
+    setShowPlatformSuggestions(false);
   };
 
   const handleSave = async () => {
@@ -347,6 +401,7 @@ export default function AddApplicationScreen({ navigation }) {
                 onFocus={() => {
                   setFocusedInput('company');
                   setShowSuggestions(false);
+                  setShowPlatformSuggestions(false);
                 }}
                 onBlur={() => setFocusedInput(null)}
                 keyboardAppearance="dark"
@@ -367,6 +422,7 @@ export default function AddApplicationScreen({ navigation }) {
                 onFocus={() => {
                   setFocusedInput('role');
                   setShowSuggestions(true);
+                  setShowPlatformSuggestions(false);
                   // Trigger initial suggestions
                   if (role.trim() === '') {
                     setRoleSuggestions(mostUsedRoles.slice(0, 5));
@@ -416,16 +472,49 @@ export default function AddApplicationScreen({ navigation }) {
                 placeholder="e.g. LinkedIn, Job Board"
                 placeholderTextColor={colors.textMuted}
                 value={platform}
-                onChangeText={setPlatform}
+                onChangeText={handlePlatformChange}
                 onFocus={() => {
                   setFocusedInput('platform');
+                  setShowPlatformSuggestions(true);
                   setShowSuggestions(false);
+                  if (platform.trim() === '') {
+                    const combined = Array.from(new Set([...mostUsedPlatforms, ...SUGGESTED_PLATFORMS]));
+                    setPlatformSuggestions(combined.slice(0, 5));
+                  } else {
+                    handlePlatformChange(platform);
+                  }
                 }}
                 onBlur={() => setFocusedInput(null)}
                 keyboardAppearance="dark"
                 editable={!isSubmitting}
               />
             </View>
+
+            {/* Platform Suggestions dropdown list */}
+            {showPlatformSuggestions && platformSuggestions.length > 0 && (
+              <View style={[styles.suggestionsContainer, { backgroundColor: colors.cardBg, borderColor: colors.cyan + '40' }]}>
+                <ScrollView nestedScrollEnabled style={styles.suggestionsScroll} keyboardShouldPersistTaps="always">
+                  {platformSuggestions.map((item, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      style={[styles.suggestionItem, { borderBottomColor: colors.border }]}
+                      onPress={() => {
+                        setPlatform(item);
+                        setShowPlatformSuggestions(false);
+                      }}
+                    >
+                      <MaterialCommunityIcons name="earth" size={14} color={colors.cyan} style={{ marginRight: 8 }} />
+                      <Text style={[styles.suggestionText, { color: colors.textPrimary }]}>{item}</Text>
+                      {mostUsedPlatforms.includes(item) && (
+                        <View style={styles.historyBadge}>
+                          <MaterialCommunityIcons name="history" size={10} color={colors.purple} />
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
           </View>
 
           {/* Group 2: Work Details */}
@@ -467,6 +556,7 @@ export default function AddApplicationScreen({ navigation }) {
                 onFocus={() => {
                   setFocusedInput('workLocation');
                   setShowSuggestions(false);
+                  setShowPlatformSuggestions(false);
                 }}
                 onBlur={() => setFocusedInput(null)}
                 keyboardAppearance="dark"
@@ -489,6 +579,7 @@ export default function AddApplicationScreen({ navigation }) {
                 onFocus={() => {
                   setFocusedInput('stipend');
                   setShowSuggestions(false);
+                  setShowPlatformSuggestions(false);
                 }}
                 onBlur={() => setFocusedInput(null)}
                 keyboardType="numeric"
@@ -510,6 +601,7 @@ export default function AddApplicationScreen({ navigation }) {
                 onFocus={() => {
                   setFocusedInput('duration');
                   setShowSuggestions(false);
+                  setShowPlatformSuggestions(false);
                 }}
                 onBlur={() => setFocusedInput(null)}
                 keyboardAppearance="dark"
@@ -602,6 +694,7 @@ export default function AddApplicationScreen({ navigation }) {
               onFocus={() => {
                 setFocusedInput('notes');
                 setShowSuggestions(false);
+                setShowPlatformSuggestions(false);
               }}
               onBlur={() => setFocusedInput(null)}
               multiline
