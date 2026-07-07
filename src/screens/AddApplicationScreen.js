@@ -130,26 +130,40 @@ export default function AddApplicationScreen({ navigation }) {
         if (list) {
           // Roles autocomplete setup
           const roleCounts = {};
+          const roleCasing = {};
           list.forEach(app => {
             if (app.role) {
               const r = app.role.trim();
-              roleCounts[r] = (roleCounts[r] || 0) + 1;
+              const lower = r.toLowerCase();
+              roleCounts[lower] = (roleCounts[lower] || 0) + 1;
+              if (!roleCasing[lower] || r !== lower) {
+                roleCasing[lower] = r;
+              }
             }
           });
-          const sortedRoles = Object.keys(roleCounts).sort((a, b) => roleCounts[b] - roleCounts[a]);
+          const sortedRoles = Object.keys(roleCounts)
+            .sort((a, b) => roleCounts[b] - roleCounts[a])
+            .map(lower => roleCasing[lower]);
           setMostUsedRoles(sortedRoles);
 
           // Platforms autocomplete setup
           const platformCounts = {};
+          const platformCasing = {};
           list.forEach(app => {
             if (app.platform) {
               const p = app.platform.trim();
               if (p !== 'Direct/Other' && p !== '') {
-                platformCounts[p] = (platformCounts[p] || 0) + 1;
+                const lower = p.toLowerCase();
+                platformCounts[lower] = (platformCounts[lower] || 0) + 1;
+                if (!platformCasing[lower] || p !== lower) {
+                  platformCasing[lower] = p;
+                }
               }
             }
           });
-          const sortedPlatforms = Object.keys(platformCounts).sort((a, b) => platformCounts[b] - platformCounts[a]);
+          const sortedPlatforms = Object.keys(platformCounts)
+            .sort((a, b) => platformCounts[b] - platformCounts[a])
+            .map(lower => platformCasing[lower]);
           setMostUsedPlatforms(sortedPlatforms);
         }
       } catch (e) {

@@ -96,12 +96,12 @@ export default function ApplicationListScreen({ route, navigation }) {
 
     // 1. Status Filter
     if (activeFilters.status !== 'All') {
-      result = result.filter(app => app.status === activeFilters.status);
+      result = result.filter(app => app.status && app.status.toLowerCase() === activeFilters.status.toLowerCase());
     }
 
     // 2. Work Mode Filter
     if (activeFilters.workMode !== 'All') {
-      result = result.filter(app => app.workMode === activeFilters.workMode);
+      result = result.filter(app => app.workMode && app.workMode.toLowerCase() === activeFilters.workMode.toLowerCase());
     }
 
     // 3. Stipend Filter
@@ -146,8 +146,8 @@ export default function ApplicationListScreen({ route, navigation }) {
     // 6. Platform Filter
     if (activeFilters.platform !== 'All') {
       result = result.filter(app => {
-        const appPlatform = app.platform || app.platformAppliedFrom || 'Direct/Other';
-        return appPlatform === activeFilters.platform;
+        const appPlatform = (app.platform || app.platformAppliedFrom || 'Direct/Other').trim();
+        return appPlatform.toLowerCase() === activeFilters.platform.toLowerCase();
       });
     }
 
@@ -286,9 +286,23 @@ export default function ApplicationListScreen({ route, navigation }) {
     return chips;
   };
 
-  const uniquePlatforms = Array.from(
-    new Set(allApplications.map(app => app.platform || app.platformAppliedFrom || 'Direct/Other').filter(Boolean))
-  );
+  const getUniquePlatforms = () => {
+    const seen = new Set();
+    const unique = [];
+    allApplications.forEach(app => {
+      const p = (app.platform || app.platformAppliedFrom || 'Direct/Other').trim();
+      if (p) {
+        const lower = p.toLowerCase();
+        if (!seen.has(lower)) {
+          seen.add(lower);
+          unique.push(p);
+        }
+      }
+    });
+    return unique;
+  };
+
+  const uniquePlatforms = getUniquePlatforms();
 
   const activeChips = getActiveChips();
   const isAnyFilterActive = activeChips.length > 0 || searchQuery.trim() !== '';
